@@ -1,0 +1,6 @@
+# TODO: Add local development services in a later phase.
+# Planned scope:
+# - Application service
+# - Database and vector store if selected
+# - Mounted source for local development
+# - Environment variable wiring from a local, non-committed env file
