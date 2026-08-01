@@ -41,16 +41,23 @@ Data sources
 -> Docker/GCP deployment
 ```
 
-See [docs/architecture.md](/C:/Users/pc/Desktop/Pro_Jets/supportlens-ai-rag/docs/architecture.md) for the planned system design.
+See [docs/architecture.md](docs/architecture.md) for the planned system design.
 
 ## Dataset Strategy
 
-The project will use reproducible, public, or explicitly generated non-private data sources. Planned data categories:
+The project uses a reproducible support-intelligence dataset design with three data layers:
 
-- Public customer-support utterances or ticket-style datasets.
-- Synthetic or manually authored support policy documents.
-- Synthetic or manually authored resolution playbooks.
-- A small reviewer-friendly sample dataset under `data/sample/`.
+- Synthetic customer support cases designed for retrieval, evaluation, and answer drafting.
+- Synthetic support policy documents that simulate customer-facing rules and constraints.
+- Synthetic internal resolution playbooks that simulate agent guidance and escalation paths.
+
+Reviewer-friendly sample files committed in this phase:
+
+- `data/sample/support_cases.jsonl`
+- `data/sample/support_policies.jsonl`
+- `data/sample/resolution_playbooks.jsonl`
+- `data/sample/evaluation_questions.jsonl`
+- `data/sample/source_manifest.md`
 
 Constraints:
 
@@ -58,7 +65,7 @@ Constraints:
 - No secrets in the repository.
 - No DataTalksClub FAQ data.
 
-See [docs/data_strategy.md](/C:/Users/pc/Desktop/Pro_Jets/supportlens-ai-rag/docs/data_strategy.md) for the detailed plan.
+See [docs/data_strategy.md](docs/data_strategy.md) for the detailed plan.
 
 ## Planned RAG Flow
 
@@ -81,8 +88,9 @@ Planned evaluation scope:
 - Metrics such as Hit Rate and MRR.
 - LLM answer evaluation for relevance, groundedness, and citation correctness.
 - Prompt version comparisons.
+- A seed evaluation set in `data/sample/evaluation_questions.jsonl` for reproducible benchmarking.
 
-See [docs/evaluation_plan.md](/C:/Users/pc/Desktop/Pro_Jets/supportlens-ai-rag/docs/evaluation_plan.md).
+See [docs/evaluation_plan.md](docs/evaluation_plan.md).
 
 ## Planned Monitoring
 
@@ -95,7 +103,7 @@ Planned monitoring scope:
 - Low-confidence or weak-grounding flags.
 - Category and usage trends in a monitoring dashboard.
 
-See [docs/monitoring_plan.md](/C:/Users/pc/Desktop/Pro_Jets/supportlens-ai-rag/docs/monitoring_plan.md).
+See [docs/monitoring_plan.md](docs/monitoring_plan.md).
 
 ## Docker and Reproducibility
 
@@ -105,6 +113,7 @@ This phase includes only a placeholder containerization scaffold:
 - `docker-compose.yml` is a TODO placeholder.
 - `pyproject.toml` is intentionally minimal.
 - `.env.example` contains placeholders only and no real secrets.
+- `data/sample/` contains a small synthetic dataset for reviewer-friendly testing.
 
 Planned reproducibility goals:
 
@@ -119,7 +128,7 @@ Future deployment is planned for GCP Cloud Run with supporting services such as 
 
 This phase does not implement cloud deployment.
 
-See [docs/deployment_gcp.md](/C:/Users/pc/Desktop/Pro_Jets/supportlens-ai-rag/docs/deployment_gcp.md).
+See [docs/deployment_gcp.md](docs/deployment_gcp.md).
 
 ## LLM Zoomcamp Rubric Checklist
 
@@ -143,10 +152,9 @@ Planned alignment with the final project rubric:
 
 Current status as of August 1, 2026:
 
-- Phase 0 scaffold and documentation blueprint in progress.
-- Repository structure is being initialized.
-- No production features are implemented yet.
-- No datasets have been ingested yet.
+- Phase 0 scaffold and documentation blueprint is complete.
+- Phase 1 sample dataset and ingestion design documents are being prepared.
+- No production ingestion pipeline is implemented yet.
 - No retrieval pipeline, evaluation pipeline, or UI behavior has been verified yet.
 
 ## Repository Structure
@@ -164,4 +172,4 @@ supportlens-ai-rag/
 
 ## Next Step
 
-Recommended next phase: Phase 1, dataset definition and ingestion design implementation.
+Recommended next phase: Phase 2, knowledge base and retrieval implementation on top of the Phase 1 dataset design.
