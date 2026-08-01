@@ -10,18 +10,20 @@ SupportLens AI is planned as a customer support intelligence system that helps s
 
 ## What the System Does
 
-Planned capabilities:
+Implemented in the current baseline:
 
-- Retrieve similar historical support cases.
-- Retrieve relevant support policy and playbook content.
-- Combine keyword and vector retrieval for hybrid search.
-- Rewrite user queries to improve retrieval quality.
-- Rerank retrieved results before answer generation.
-- Generate grounded answer recommendations with citations.
-- Collect explicit user feedback on output quality.
-- Monitor latency, usage, retrieval behavior, and quality signals.
-- Run locally with Docker Compose.
-- Support a future deployment path to GCP Cloud Run.
+- Validates the committed synthetic sample dataset.
+- Normalizes support cases, policies, and playbooks into a shared document format.
+- Prepares deterministic retrieval chunks.
+- Runs a keyword retrieval baseline over the chunk set.
+- Evaluates retrieval against the sample benchmark with Hit Rate and MRR.
+
+Planned later phases:
+
+- Vector retrieval and hybrid search.
+- Reranking and query rewriting.
+- Grounded LLM answer generation with citations.
+- Feedback capture, monitoring, UI, Docker deployment, and GCP deployment.
 
 ## Architecture Overview
 
@@ -67,6 +69,15 @@ Constraints:
 
 See [docs/data_strategy.md](docs/data_strategy.md) for the detailed plan.
 
+## Phase 2 Baseline
+
+The current retrieval baseline is intentionally lightweight:
+
+- `python -m src.ingestion.pipeline --sample` validates sample JSONL, normalizes documents, creates chunks, and writes ignored local outputs under `data/processed/`.
+- `python -m src.retrieval.evaluate --sample --top-k 5` runs the keyword baseline and writes ignored local metrics under `data/processed/keyword_retrieval_metrics.json`.
+
+See [docs/phase2_retrieval_baseline.md](docs/phase2_retrieval_baseline.md) for the implementation notes and verified local metrics.
+
 ## Planned RAG Flow
 
 Planned application flow:
@@ -111,9 +122,9 @@ This phase includes only a placeholder containerization scaffold:
 
 - `Dockerfile` is a TODO placeholder.
 - `docker-compose.yml` is a TODO placeholder.
-- `pyproject.toml` is intentionally minimal.
+- `pyproject.toml` remains minimal and uses only the Python standard library for the current Phase 2 baseline.
 - `.env.example` contains placeholders only and no real secrets.
-- `data/sample/` contains a small synthetic dataset for reviewer-friendly testing.
+- `data/sample/` contains the synthetic dataset for reviewer-friendly testing.
 
 Planned reproducibility goals:
 
@@ -132,30 +143,30 @@ See [docs/deployment_gcp.md](docs/deployment_gcp.md).
 
 ## LLM Zoomcamp Rubric Checklist
 
-Planned alignment with the final project rubric:
+Current progress against the final project rubric:
 
 - [x] Problem description
 - [x] Dataset or API-backed data source plan
-- [x] Data ingestion plan
+- [x] Data ingestion baseline
 - [x] RAG or agent application plan
-- [x] Retrieval evaluation plan
+- [x] Retrieval evaluation baseline
 - [x] LLM evaluation plan
-- [x] Application interface plan
-- [x] User feedback collection plan
-- [x] Monitoring plan
-- [x] Docker/containerization plan
-- [x] Reproducible setup plan
-- [x] Best-practice design for hybrid search, reranking, and query rewriting
-- [x] Optional cloud deployment plan
+- [ ] Application interface
+- [ ] User feedback collection
+- [ ] Monitoring implementation
+- [ ] Docker/containerization implementation
+- [ ] Reproducible deployment setup
+- [ ] Hybrid search, reranking, and query rewriting implementation
+- [ ] Optional cloud deployment implementation
 
 ## Current Project Status
 
 Current status as of August 1, 2026:
 
 - Phase 0 scaffold and documentation blueprint is complete.
-- Phase 1 sample dataset and ingestion design documents are being prepared.
-- No production ingestion pipeline is implemented yet.
-- No retrieval pipeline, evaluation pipeline, or UI behavior has been verified yet.
+- Phase 1 sample dataset strategy is complete.
+- Phase 2 ingestion and keyword retrieval baseline is implemented and verified locally on the sample dataset.
+- Vector retrieval, hybrid retrieval, reranking, LLM generation, UI, monitoring, Docker, and GCP deployment are not implemented yet.
 
 ## Repository Structure
 
@@ -172,4 +183,4 @@ supportlens-ai-rag/
 
 ## Next Step
 
-Recommended next phase: Phase 2, knowledge base and retrieval implementation on top of the Phase 1 dataset design.
+Recommended next phase: Phase 3, retrieval evaluation expansion and error analysis for stronger benchmark coverage before adding semantic retrieval.
