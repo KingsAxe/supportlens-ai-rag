@@ -10,20 +10,23 @@ SupportLens AI is planned as a customer support intelligence system that helps s
 
 ## What the System Does
 
-Implemented in the current baseline:
+Implemented in the current local retrieval stack:
 
 - Validates the committed synthetic sample dataset.
 - Normalizes support cases, policies, and playbooks into a shared document format.
 - Prepares deterministic retrieval chunks.
-- Runs a keyword retrieval baseline over the chunk set.
-- Evaluates retrieval against the sample benchmark with Hit Rate and MRR.
+- Runs a keyword BM25-style retrieval baseline.
+- Runs a local vector retrieval path.
+- Combines keyword and vector results with hybrid fusion.
+- Applies a lightweight local reranker to hybrid candidates.
+- Evaluates retrieval methods against both the original and harder synthetic benchmark sets.
 
 Planned later phases:
 
-- Vector retrieval and hybrid search.
-- Reranking and query rewriting.
 - Grounded LLM answer generation with citations.
-- Feedback capture, monitoring, UI, Docker deployment, and GCP deployment.
+- Feedback capture and monitoring.
+- Streamlit UI.
+- Docker deployment and GCP deployment.
 
 ## Architecture Overview
 
@@ -34,7 +37,6 @@ Data sources
 -> ingestion pipeline
 -> cleaned/chunked documents
 -> keyword index + vector index
--> query rewriting
 -> hybrid retrieval
 -> reranking
 -> grounded LLM answer with citations
@@ -43,7 +45,7 @@ Data sources
 -> Docker/GCP deployment
 ```
 
-See [docs/architecture.md](docs/architecture.md) for the planned system design.
+See [docs/architecture.md](docs/architecture.md) for the retrieval-oriented architecture notes.
 
 ## Dataset Strategy
 
@@ -53,12 +55,13 @@ The project uses a reproducible support-intelligence dataset design with three d
 - Synthetic support policy documents that simulate customer-facing rules and constraints.
 - Synthetic internal resolution playbooks that simulate agent guidance and escalation paths.
 
-Reviewer-friendly sample files committed in this phase:
+Committed sample benchmark files:
 
 - `data/sample/support_cases.jsonl`
 - `data/sample/support_policies.jsonl`
 - `data/sample/resolution_playbooks.jsonl`
 - `data/sample/evaluation_questions.jsonl`
+- `data/sample/evaluation_questions_hard.jsonl`
 - `data/sample/source_manifest.md`
 
 Constraints:
@@ -69,69 +72,55 @@ Constraints:
 
 See [docs/data_strategy.md](docs/data_strategy.md) for the detailed plan.
 
-## Phase 2 Baseline
+## Retrieval Baselines
 
-The current retrieval baseline is intentionally lightweight:
+Implemented commands:
 
-- `python -m src.ingestion.pipeline --sample` validates sample JSONL, normalizes documents, creates chunks, and writes ignored local outputs under `data/processed/`.
-- `python -m src.retrieval.evaluate --sample --top-k 5` runs the keyword baseline and writes ignored local metrics under `data/processed/keyword_retrieval_metrics.json`.
+```bash
+python -m src.ingestion.pipeline --sample
+python -m src.retrieval.evaluate --sample --top-k 5 --method keyword
+python -m src.retrieval.evaluate --sample --top-k 5 --method vector
+python -m src.retrieval.evaluate --sample --top-k 5 --method hybrid
+python -m src.retrieval.evaluate --sample --top-k 5 --method hybrid_rerank
+python -m src.retrieval.evaluate --sample --top-k 5 --method all --eval-file data/sample/evaluation_questions_hard.jsonl
+```
 
-See [docs/phase2_retrieval_baseline.md](docs/phase2_retrieval_baseline.md) for the implementation notes and verified local metrics.
+Current retrieval summary:
 
-## Planned RAG Flow
+- Original synthetic set remains a very easy controlled baseline.
+- The harder set introduces indirect phrasing, multi-source expectations, and escalation-oriented questions.
+- `hybrid_rerank` is the current recommended retrieval method for the next phase because it matches the original-set ceiling while performing best on the harder set MRR.
 
-Planned application flow:
+Validation note:
 
-1. Ingest raw support-style data and internal support knowledge documents.
-2. Clean, normalize, and chunk documents.
-3. Store documents in a knowledge base with keyword and vector indexes.
-4. Rewrite incoming queries when beneficial.
-5. Run hybrid retrieval across historical cases and policy/playbook content.
-6. Rerank retrieved candidates.
-7. Generate grounded response recommendations with citations.
-8. Log feedback and operational metadata for monitoring and evaluation.
+- The Phase 3 validation run used the local offline vector fallback because `sentence-transformers` was not installed in the current validation environment. The vector module is configured to use `sentence-transformers/all-MiniLM-L6-v2` when the dependency and model are available.
+
+See [docs/phase2_retrieval_baseline.md](docs/phase2_retrieval_baseline.md) and [docs/phase3_retrieval_comparison.md](docs/phase3_retrieval_comparison.md).
 
 ## Planned Evaluation
 
-Planned evaluation scope:
+Evaluation currently covers:
 
-- Retrieval evaluation for keyword, vector, hybrid, and reranked retrieval.
-- Metrics such as Hit Rate and MRR.
-- LLM answer evaluation for relevance, groundedness, and citation correctness.
-- Prompt version comparisons.
-- A seed evaluation set in `data/sample/evaluation_questions.jsonl` for reproducible benchmarking.
+- keyword retrieval evaluation;
+- vector retrieval evaluation;
+- hybrid retrieval evaluation;
+- hybrid plus reranking evaluation;
+- Hit Rate;
+- MRR.
 
 See [docs/evaluation_plan.md](docs/evaluation_plan.md).
 
 ## Planned Monitoring
 
-Planned monitoring scope:
-
-- User ratings and thumbs up/down feedback.
-- Query and retrieval metadata.
-- Latency and token usage.
-- Number of retrieved documents.
-- Low-confidence or weak-grounding flags.
-- Category and usage trends in a monitoring dashboard.
-
-See [docs/monitoring_plan.md](docs/monitoring_plan.md).
+Monitoring is still a later phase. See [docs/monitoring_plan.md](docs/monitoring_plan.md).
 
 ## Docker and Reproducibility
 
-This phase includes only a placeholder containerization scaffold:
+This repository still uses placeholder Docker files in the current phase.
 
-- `Dockerfile` is a TODO placeholder.
-- `docker-compose.yml` is a TODO placeholder.
-- `pyproject.toml` remains minimal and uses only the Python standard library for the current Phase 2 baseline.
+- `pyproject.toml` now declares local retrieval dependencies.
 - `.env.example` contains placeholders only and no real secrets.
-- `data/sample/` contains the synthetic dataset for reviewer-friendly testing.
-
-Planned reproducibility goals:
-
-- Local development through Docker Compose.
-- Clearly documented environment variables.
-- Sample data for reviewer-friendly setup.
-- Deterministic project structure and documented run steps.
+- `data/processed/` is used for ignored local artifacts such as chunk outputs, metrics, and vector caches.
 
 ## GCP Deployment
 
@@ -148,7 +137,7 @@ Current progress against the final project rubric:
 - [x] Problem description
 - [x] Dataset or API-backed data source plan
 - [x] Data ingestion baseline
-- [x] RAG or agent application plan
+- [x] Retrieval baseline and comparison
 - [x] Retrieval evaluation baseline
 - [x] LLM evaluation plan
 - [ ] Application interface
@@ -156,31 +145,19 @@ Current progress against the final project rubric:
 - [ ] Monitoring implementation
 - [ ] Docker/containerization implementation
 - [ ] Reproducible deployment setup
-- [ ] Hybrid search, reranking, and query rewriting implementation
+- [ ] LLM answer generation
 - [ ] Optional cloud deployment implementation
 
 ## Current Project Status
 
-Current status as of August 1, 2026:
+Current status as of August 2, 2026:
 
 - Phase 0 scaffold and documentation blueprint is complete.
 - Phase 1 sample dataset strategy is complete.
-- Phase 2 ingestion and keyword retrieval baseline is implemented and verified locally on the sample dataset.
-- Vector retrieval, hybrid retrieval, reranking, LLM generation, UI, monitoring, Docker, and GCP deployment are not implemented yet.
-
-## Repository Structure
-
-```text
-supportlens-ai-rag/
-  app/
-  src/
-  data/
-  docs/
-  notebooks/
-  tests/
-  docker/
-```
+- Phase 2 ingestion and keyword retrieval baseline is complete.
+- Phase 3 retrieval comparison is implemented locally with keyword, vector, hybrid, and lightweight reranking.
+- LLM generation, UI, monitoring, Docker, and GCP deployment are not implemented yet.
 
 ## Next Step
 
-Recommended next phase: Phase 3, retrieval evaluation expansion and error analysis for stronger benchmark coverage before adding semantic retrieval.
+Recommended next phase: Phase 4, grounded answer generation on top of the chosen retrieval stack.

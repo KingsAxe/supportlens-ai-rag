@@ -49,7 +49,8 @@ class EvaluationQuestion:
     expected_policy_ids: list[str]
     expected_playbook_ids: list[str]
     answer_type: str
-    notes: str
+    difficulty: str | None = None
+    notes: str = ""
 
 
 REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
@@ -105,6 +106,14 @@ def _require_non_empty_text(record: dict[str, Any], fields: tuple[str, ...], sch
         value = record[field]
         if not isinstance(value, str) or not value.strip():
             raise ValueError(f"Field '{field}' must be a non-empty string for {schema_name}")
+
+
+def _require_optional_text(value: Any, field_name: str, schema_name: str) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"Field '{field_name}' must be a non-empty string when present for {schema_name}")
+    return value
 
 
 def _require_string_list(value: Any, field_name: str, schema_name: str) -> list[str]:
@@ -177,6 +186,7 @@ def validate_evaluation_questions(records: list[dict[str, Any]]) -> list[Evaluat
                 expected_policy_ids=_require_string_list(record["expected_policy_ids"], "expected_policy_ids", "evaluation_question"),
                 expected_playbook_ids=_require_string_list(record["expected_playbook_ids"], "expected_playbook_ids", "evaluation_question"),
                 answer_type=record["answer_type"],
+                difficulty=_require_optional_text(record.get("difficulty"), "difficulty", "evaluation_question"),
                 notes=record["notes"],
             )
         )

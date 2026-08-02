@@ -1,10 +1,14 @@
 [project]
 name = "supportlens-ai-rag"
 version = "0.1.0"
-description = "Phase 0 scaffold for a customer support intelligence RAG agent"
+description = "Customer support intelligence RAG agent with local retrieval baselines"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+  "numpy>=1.26,<3",
+  "scikit-learn>=1.5,<2",
+  "sentence-transformers>=3,<4",
+]
 
 [build-system]
 requires = ["setuptools>=68"]

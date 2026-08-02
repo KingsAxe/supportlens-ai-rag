@@ -7,7 +7,6 @@ Data sources
 -> ingestion pipeline
 -> cleaned/chunked documents
 -> keyword index + vector index
--> query rewriting
 -> hybrid retrieval
 -> reranking
 -> grounded LLM answer with citations
@@ -16,56 +15,50 @@ Data sources
 -> Docker/GCP deployment
 ```
 
-## Planned Components
+## Current Retrieval-Oriented Components
 
 ### Data sources
 
-Planned sources include public support-style conversations, synthetic support policies, and synthetic resolution playbooks. The design intentionally excludes private data and DataTalksClub FAQ data.
+Current committed sample sources include synthetic support cases, synthetic policy documents, synthetic playbooks, and two synthetic evaluation sets. The design intentionally excludes private data and DataTalksClub FAQ data.
 
 ### Ingestion pipeline
 
-The ingestion layer is planned to:
+The implemented ingestion layer can:
 
-- load raw source files or API-backed content;
-- normalize schema and metadata;
-- clean noisy text;
-- segment long documents into chunks;
-- persist processed artifacts for reproducible indexing.
+- load sample JSONL files;
+- validate schemas and duplicate IDs;
+- normalize records into a shared document format;
+- create deterministic chunk records;
+- persist ignored local processed artifacts for retrieval and evaluation.
 
 ### Knowledge base
 
-The knowledge base is planned to contain:
+The current local knowledge base is file-backed under `data/processed/` and includes:
 
-- a keyword-searchable index for lexical matching;
-- a vector index for semantic similarity;
-- metadata linking chunks to source documents, categories, and support case identifiers.
+- normalized documents;
+- retrieval chunks;
+- vector cache artifacts when vector retrieval is used;
+- evaluation metric reports.
 
-### Query processing
+This is a local development baseline, not the final storage design.
 
-The retrieval stack is planned to support:
+### Retrieval stack
 
-- optional query rewriting;
-- hybrid retrieval over keyword and vector indexes;
-- candidate reranking before answer generation.
+The current retrieval stack includes:
+
+- BM25-style keyword retrieval;
+- local vector retrieval with a default sentence-transformers model configuration and an offline sklearn fallback path;
+- hybrid retrieval via reciprocal rank fusion;
+- a lightweight local reranker using lexical overlap, metadata overlap, and source diversity heuristics.
 
 ### Answer generation
 
-The LLM layer is planned to:
-
-- consume reranked evidence;
-- generate a grounded recommendation for support agents;
-- include citations that map back to retrieved sources;
-- expose enough metadata for evaluation and monitoring.
+Grounded LLM answer generation is still a later phase.
 
 ### Feedback and monitoring
 
-The application is planned to log:
-
-- user feedback signals;
-- retrieval method metadata;
-- latency and usage counters;
-- confidence or weak-grounding indicators.
+Feedback logging and monitoring are still later phases.
 
 ### Packaging and deployment
 
-The local target is Docker Compose. The future cloud target is GCP Cloud Run with externalized secrets and a managed persistence option.
+The local target remains Docker Compose in a later phase. The future cloud target is GCP Cloud Run with externalized secrets and managed persistence.

@@ -2,53 +2,71 @@
 
 ## Retrieval Evaluation Scope
 
-The retrieval layer will be evaluated across four planned strategies:
+The retrieval layer is evaluated across four strategies:
 
 - keyword retrieval evaluation;
 - vector retrieval evaluation;
 - hybrid retrieval evaluation;
-- reranked retrieval evaluation.
+- reranked hybrid retrieval evaluation.
 
 ## Retrieval Metrics
 
-Primary planned retrieval metrics:
+Primary retrieval metrics:
 
 - Hit Rate;
 - MRR.
 
-Additional metrics may be added later if they improve clarity without overcomplicating the benchmark.
+## Evaluation Sets
+
+The project now uses two committed synthetic evaluation sets:
+
+- `data/sample/evaluation_questions.jsonl`
+- `data/sample/evaluation_questions_hard.jsonl`
+
+### Original evaluation set
+
+The original set is a small controlled baseline aligned closely with the initial sample documents. It is useful for regression checking but too easy to treat as strong evidence of production retrieval quality.
+
+### Hard evaluation set
+
+The harder set adds:
+
+- indirect phrasing;
+- multi-source questions;
+- synonym-heavy wording;
+- escalation and risk scenarios;
+- questions that benefit from retrieving both policy and playbook material.
 
 ## Retrieval Evaluation Design
 
-Planned approach:
+Current evaluation workflow:
 
-1. Build a labeled or semi-labeled query set representing realistic support-agent questions.
-2. Define expected relevant cases, policies, or playbook chunks.
-3. Run each retrieval strategy on the same evaluation set.
-4. Compare result quality and coverage before and after reranking.
+1. Validate the selected evaluation file.
+2. Confirm all expected document IDs exist in the sample source files.
+3. Run retrieval for each question.
+4. Compare retrieved source IDs against expected case, policy, and playbook IDs.
+5. Compute Hit Rate and MRR for each method.
 
-Phase 1 introduces `data/sample/evaluation_questions.jsonl` as the initial seed benchmark. Each record contains:
+Supported retrieval methods:
 
-- `question_id`
-- `question`
-- `expected_case_ids`
-- `expected_policy_ids`
-- `expected_playbook_ids`
-- `answer_type`
-- `notes`
+- keyword;
+- vector;
+- hybrid;
+- hybrid_rerank.
 
-Planned use of the seed set:
+## Current Comparative Use
 
-- keyword retrieval evaluation measures whether lexical matching can recover the expected evidence IDs;
-- vector retrieval evaluation measures whether semantic similarity can recover the expected evidence IDs;
-- hybrid retrieval evaluation compares combined recall against either method alone;
-- reranked retrieval evaluation checks whether reranking improves top-position relevance.
+The Phase 3 evaluator supports:
 
-Hit Rate will be used to measure whether at least one expected document is returned in the top-k results. MRR will be used to measure how highly the first relevant document is ranked.
+- per-method runs for the original evaluation set;
+- per-method runs for the hard evaluation set;
+- comparison reporting across all methods.
+
+The comparison report is written locally to `data/processed/retrieval_comparison_metrics.json` and is intentionally ignored by git.
 
 ## LLM Evaluation Scope
 
-Planned answer-level evaluation dimensions:
+Planned answer-level evaluation dimensions for later phases:
 
 - answer relevance;
 - groundedness;
@@ -57,26 +75,18 @@ Planned answer-level evaluation dimensions:
 
 ## LLM Evaluation Design
 
-The answer evaluation workflow is planned to:
+The later answer evaluation workflow is planned to:
 
-- use the same or overlapping benchmark queries from retrieval evaluation;
-- compare prompt versions under consistent retrieval context;
+- reuse retrieval benchmarks from the current question sets;
+- compare prompts under fixed retrieval inputs;
 - inspect whether claims are supported by retrieved evidence;
-- verify that citations point to the correct supporting documents or chunks.
-
-How the Phase 1 seed set supports answer evaluation:
-
-- expected case IDs help assess whether generated responses use relevant historical precedent;
-- expected policy IDs help assess whether generated answers respect policy boundaries;
-- expected playbook IDs help assess whether internal guidance and escalation steps are used appropriately.
-
-Groundedness will later be reviewed by checking whether answer claims can be traced to retrieved documents. Citation correctness will be reviewed by checking whether cited IDs correspond to truly relevant records from the seed set.
+- verify whether citations match the correct source records.
 
 ## Planned Outputs
 
 Planned artifacts include:
 
-- benchmark tables;
-- strategy comparison summaries;
-- prompt comparison notes;
-- evaluation dashboard content or report pages.
+- retrieval comparison tables;
+- benchmark summaries by method;
+- future prompt comparison notes;
+- evaluation report content for the application layer.
