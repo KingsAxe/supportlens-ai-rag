@@ -38,7 +38,8 @@ The current local knowledge base is file-backed under `data/processed/` and incl
 - normalized documents;
 - retrieval chunks;
 - vector cache artifacts when vector retrieval is used;
-- evaluation metric reports.
+- evaluation metric reports;
+- RAG run logs.
 
 This is a local development baseline, not the final storage design.
 
@@ -51,13 +52,20 @@ The current retrieval stack includes:
 - hybrid retrieval via reciprocal rank fusion;
 - a lightweight local reranker using lexical overlap, metadata overlap, and source diversity heuristics.
 
-### Answer generation
+### Grounded answer generation
 
-Grounded LLM answer generation is still a later phase.
+The current grounded-generation layer can:
+
+- retrieve evidence with `hybrid_rerank`;
+- package citation-ready evidence as `[C1]`, `[C2]`, and so on;
+- build a grounded support prompt;
+- call an OpenAI-compatible LLM when configured;
+- fall back to deterministic mock generation when no live LLM configuration is available;
+- log run metadata without storing secrets.
 
 ### Feedback and monitoring
 
-Feedback logging and monitoring are still later phases.
+Feedback logging and monitoring dashboards are still later phases.
 
 ### Packaging and deployment
 

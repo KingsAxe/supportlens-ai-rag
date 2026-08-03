@@ -10,20 +10,22 @@ SupportLens AI is planned as a customer support intelligence system that helps s
 
 ## What the System Does
 
-Implemented in the current local retrieval stack:
+Implemented in the current local stack:
 
 - Validates the committed synthetic sample dataset.
 - Normalizes support cases, policies, and playbooks into a shared document format.
 - Prepares deterministic retrieval chunks.
-- Runs a keyword BM25-style retrieval baseline.
-- Runs a local vector retrieval path.
-- Combines keyword and vector results with hybrid fusion.
-- Applies a lightweight local reranker to hybrid candidates.
-- Evaluates retrieval methods against both the original and harder synthetic benchmark sets.
+- Runs keyword, vector, hybrid, and hybrid-plus-rerank retrieval evaluation.
+- Uses `hybrid_rerank` as the current retrieval method for grounded answer generation.
+- Packages retrieval results into citation-ready evidence.
+- Builds a grounded support-assistant prompt.
+- Supports deterministic dry-run/mock answer generation without API keys.
+- Supports real OpenAI-compatible LLM mode when environment variables and dependencies are available.
+- Writes ignored local run metadata for later answer evaluation and monitoring work.
 
 Planned later phases:
 
-- Grounded LLM answer generation with citations.
+- Richer answer evaluation.
 - Feedback capture and monitoring.
 - Streamlit UI.
 - Docker deployment and GCP deployment.
@@ -72,41 +74,37 @@ Constraints:
 
 See [docs/data_strategy.md](docs/data_strategy.md) for the detailed plan.
 
-## Retrieval Baselines
+## Retrieval and Grounded Generation
 
 Implemented commands:
 
 ```bash
 python -m src.ingestion.pipeline --sample
-python -m src.retrieval.evaluate --sample --top-k 5 --method keyword
-python -m src.retrieval.evaluate --sample --top-k 5 --method vector
-python -m src.retrieval.evaluate --sample --top-k 5 --method hybrid
-python -m src.retrieval.evaluate --sample --top-k 5 --method hybrid_rerank
-python -m src.retrieval.evaluate --sample --top-k 5 --method all --eval-file data/sample/evaluation_questions_hard.jsonl
+python -m src.retrieval.evaluate --sample --top-k 5 --method hybrid_rerank --eval-file data/sample/evaluation_questions_hard.jsonl
+python -m src.rag.answer --question "A customer says they were charged twice after upgrading. What similar cases and policies apply?" --top-k 5 --dry-run
 ```
 
 Current retrieval summary:
 
-- Original synthetic set remains a very easy controlled baseline.
-- The harder set introduces indirect phrasing, multi-source expectations, and escalation-oriented questions.
-- `hybrid_rerank` is the current recommended retrieval method for the next phase because it matches the original-set ceiling while performing best on the harder set MRR.
+- `hybrid_rerank` is the selected retrieval method for grounded generation.
+- The original synthetic set remains a controlled easy baseline.
+- The harder set is the more meaningful retrieval comparison benchmark.
+- The current answer layer is grounded by retrieved evidence and citation IDs, but it is still an early local baseline.
 
 Validation note:
 
-- The Phase 3 validation run used the local offline vector fallback because `sentence-transformers` was not installed in the current validation environment. The vector module is configured to use `sentence-transformers/all-MiniLM-L6-v2` when the dependency and model are available.
+- The Phase 3 and Phase 4 validation runs used the local offline vector fallback because `sentence-transformers` was not installed in the current validation environment. The vector module is configured to use `sentence-transformers/all-MiniLM-L6-v2` when the dependency and model are available.
+- Phase 4 dry-run answer generation was validated successfully. The OpenAI-compatible Qwen models endpoint was reachable when local proxy variables were disabled, but the live chat smoke test was blocked by a provider-side 403 quota/billing response. Real LLM mode is implemented through environment-based configuration, while dry-run mode remains available for reproducible reviewer testing without an API key.
 
-See [docs/phase2_retrieval_baseline.md](docs/phase2_retrieval_baseline.md) and [docs/phase3_retrieval_comparison.md](docs/phase3_retrieval_comparison.md).
+See [docs/phase3_retrieval_comparison.md](docs/phase3_retrieval_comparison.md) and [docs/phase4_grounded_generation.md](docs/phase4_grounded_generation.md).
 
 ## Planned Evaluation
 
 Evaluation currently covers:
 
-- keyword retrieval evaluation;
-- vector retrieval evaluation;
-- hybrid retrieval evaluation;
-- hybrid plus reranking evaluation;
-- Hit Rate;
-- MRR.
+- retrieval comparison metrics;
+- answer-shape and citation validation hooks;
+- local run metadata capture for later answer evaluation.
 
 See [docs/evaluation_plan.md](docs/evaluation_plan.md).
 
@@ -118,9 +116,9 @@ Monitoring is still a later phase. See [docs/monitoring_plan.md](docs/monitoring
 
 This repository still uses placeholder Docker files in the current phase.
 
-- `pyproject.toml` now declares local retrieval dependencies.
+- `pyproject.toml` now declares local retrieval and LLM-client dependencies.
 - `.env.example` contains placeholders only and no real secrets.
-- `data/processed/` is used for ignored local artifacts such as chunk outputs, metrics, and vector caches.
+- `data/processed/` is used for ignored local artifacts such as chunk outputs, metrics, vector caches, and RAG run logs.
 
 ## GCP Deployment
 
@@ -138,26 +136,28 @@ Current progress against the final project rubric:
 - [x] Dataset or API-backed data source plan
 - [x] Data ingestion baseline
 - [x] Retrieval baseline and comparison
+- [x] Grounded answer-generation baseline
 - [x] Retrieval evaluation baseline
-- [x] LLM evaluation plan
+- [x] LLM evaluation hook layer
 - [ ] Application interface
 - [ ] User feedback collection
 - [ ] Monitoring implementation
 - [ ] Docker/containerization implementation
 - [ ] Reproducible deployment setup
-- [ ] LLM answer generation
 - [ ] Optional cloud deployment implementation
 
 ## Current Project Status
 
-Current status as of August 2, 2026:
+Current status as of August 3, 2026:
 
 - Phase 0 scaffold and documentation blueprint is complete.
 - Phase 1 sample dataset strategy is complete.
 - Phase 2 ingestion and keyword retrieval baseline is complete.
-- Phase 3 retrieval comparison is implemented locally with keyword, vector, hybrid, and lightweight reranking.
-- LLM generation, UI, monitoring, Docker, and GCP deployment are not implemented yet.
+- Phase 3 retrieval comparison is complete.
+- Phase 4 grounded answer-generation baseline is implemented locally with successful dry-run validation.
+- Real LLM mode is implemented, the models endpoint was reachable with proxy variables disabled, but live chat validation is currently blocked by a provider-side quota/billing response.
+- UI, monitoring, Docker, and GCP deployment are not implemented yet.
 
 ## Next Step
 
-Recommended next phase: Phase 4, grounded answer generation on top of the chosen retrieval stack.
+Recommended next phase: Phase 5, answer-quality evaluation and groundedness analysis.

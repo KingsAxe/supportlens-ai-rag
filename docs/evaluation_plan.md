@@ -39,7 +39,7 @@ The harder set adds:
 
 ## Retrieval Evaluation Design
 
-Current evaluation workflow:
+Current retrieval evaluation workflow:
 
 1. Validate the selected evaluation file.
 2. Confirm all expected document IDs exist in the sample source files.
@@ -54,19 +54,28 @@ Supported retrieval methods:
 - hybrid;
 - hybrid_rerank.
 
+## Grounded Answer Evaluation Hooks
+
+Phase 4 adds lightweight non-LLM answer evaluation hooks for later use:
+
+- whether an answer contains citations;
+- whether citation IDs are valid;
+- whether unsupported citation IDs appear;
+- answer length;
+- evidence count;
+- helper overlap checks between retrieved and expected source IDs.
+
+These hooks are not full answer-quality scoring yet. They are intended to support the more complete answer evaluation work in Phase 5.
+
 ## Current Comparative Use
 
-The Phase 3 evaluator supports:
+The retrieval comparison report is written locally to `data/processed/retrieval_comparison_metrics.json` and is intentionally ignored by git.
 
-- per-method runs for the original evaluation set;
-- per-method runs for the hard evaluation set;
-- comparison reporting across all methods.
-
-The comparison report is written locally to `data/processed/retrieval_comparison_metrics.json` and is intentionally ignored by git.
+The grounded answer CLI also writes local run metadata to `data/processed/rag_runs.jsonl`, which is likewise ignored.
 
 ## LLM Evaluation Scope
 
-Planned answer-level evaluation dimensions for later phases:
+Planned richer answer-level evaluation dimensions for later phases:
 
 - answer relevance;
 - groundedness;
@@ -88,5 +97,6 @@ Planned artifacts include:
 
 - retrieval comparison tables;
 - benchmark summaries by method;
+- answer citation validation summaries;
 - future prompt comparison notes;
 - evaluation report content for the application layer.

@@ -59,6 +59,14 @@ def write_jsonl(path: str | Path, records: Iterable[dict[str, Any]]) -> None:
             handle.write(json.dumps(record, ensure_ascii=True) + "\n")
 
 
+def append_jsonl(path: str | Path, record: dict[str, Any]) -> None:
+    """Append a single record to a JSONL file."""
+    file_path = Path(path)
+    ensure_parent_dir(file_path)
+    with file_path.open("a", encoding="utf-8", newline="\n") as handle:
+        handle.write(json.dumps(record, ensure_ascii=True) + "\n")
+
+
 def write_json(path: str | Path, payload: dict[str, Any]) -> None:
     """Write a JSON object with stable formatting."""
     file_path = Path(path)
