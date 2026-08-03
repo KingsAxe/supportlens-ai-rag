@@ -6,6 +6,7 @@ from typing import Any
 
 import streamlit as st
 
+from src.monitoring.logger import log_answer_generated, log_feedback_submitted
 from src.rag.answer import (
     generate_support_answer,
     knowledge_base_status,
@@ -22,7 +23,7 @@ EXAMPLE_QUESTIONS = [
     "A customer cannot access their account after multiple login attempts. What should support check?",
 ]
 
-st.set_page_config(page_title="Ask SupportLens", page_icon="??", layout="wide")
+st.set_page_config(page_title="Ask SupportLens", page_icon="SL", layout="wide")
 st.title("Ask SupportLens")
 st.caption("Grounded support-answer generation with citations, using `hybrid_rerank` and a safe dry-run default.")
 
@@ -40,6 +41,18 @@ def _short_preview(text: str, limit: int = 160) -> str:
     if len(compact) <= limit:
         return compact
     return compact[: limit - 3].rstrip() + "..."
+
+
+def _result_signature(result: dict[str, Any]) -> str:
+    return "|".join(
+        [
+            result.get("question", ""),
+            result.get("dataset_mode", ""),
+            result.get("prompt_version", ""),
+            str(result.get("dry_run", True)),
+            str(result.get("latency_ms", "")),
+        ]
+    )
 
 
 with st.sidebar:
@@ -117,6 +130,12 @@ if st.button("Generate Support Answer", type="primary", use_container_width=True
                 st.exception(exc)
             else:
                 st.session_state["last_answer_result"] = result
+                st.session_state["last_answer_signature"] = _result_signature(result)
+                st.session_state["feedback_submitted_signature"] = None
+                st.session_state["feedback_rating"] = 4
+                st.session_state["feedback_thumbs"] = "up"
+                st.session_state["feedback_text"] = ""
+                log_answer_generated(result=result, question=question.strip(), top_k=top_k)
 
 result: dict[str, Any] | None = st.session_state.get("last_answer_result")
 if result:
@@ -151,6 +170,33 @@ if result:
         "output_tokens": result["output_tokens"],
     }
     st.json(metadata)
+
+    st.subheader("Feedback")
+    with st.form("feedback_form"):
+        rating = st.slider("Rating", min_value=1, max_value=5, value=st.session_state.get("feedback_rating", 4))
+        thumbs = st.radio("Thumbs", ["up", "down"], index=0 if st.session_state.get("feedback_thumbs", "up") == "up" else 1)
+        feedback_text = st.text_area(
+            "Optional feedback comments",
+            value=st.session_state.get("feedback_text", ""),
+            placeholder="What was useful or what needs improvement?",
+        )
+        feedback_submitted = st.form_submit_button("Submit Feedback")
+
+    if feedback_submitted:
+        signature = _result_signature(result)
+        if st.session_state.get("feedback_submitted_signature") == signature:
+            st.info("Feedback for this answer has already been saved in this session.")
+        else:
+            log_feedback_submitted(
+                result=result,
+                question=result["question"],
+                top_k=top_k,
+                rating=rating,
+                thumbs=thumbs,
+                feedback_text=feedback_text,
+            )
+            st.session_state["feedback_submitted_signature"] = signature
+            st.success("Feedback saved to the local monitoring log.")
 
 st.info(
     "Dry-run mode is deterministic and reviewer-friendly. Real LLM mode requires a configured provider, "

@@ -23,7 +23,7 @@ python -m src.ingestion.pipeline --combined-sample
 2. `pages/1_Ask_SupportLens.py`
    Main answer-generation interface.
 3. `pages/2_Monitoring_Dashboard.py`
-   Placeholder page for the next phase.
+   Local monitoring and feedback dashboard.
 4. `pages/3_Evaluation_Report.py`
    Lightweight metrics summary page.
 
@@ -35,7 +35,7 @@ Dry-run mode:
 
 - uses the existing grounded retrieval and citation pipeline;
 - does not make external LLM calls;
-- still shows answer structure, citations, and retrieval metadata.
+- still shows answer structure, citations, retrieval metadata, and local monitoring hooks.
 
 ## Combined-Sample Default
 
@@ -64,7 +64,9 @@ Current limitation:
 5. Enter a support question or load an example.
 6. Generate the answer in dry-run mode.
 7. Review the answer, citations, and retrieval metadata.
-8. Open **Evaluation Report** for the current metrics summary.
+8. Submit optional rating, thumbs feedback, and comments.
+9. Open **Monitoring Dashboard** to review local monitoring charts.
+10. Open **Evaluation Report** for the current metrics summary.
 
 ## Safe Data Preparation Design
 
@@ -78,10 +80,20 @@ Safety behavior:
 
 This prevents the earlier `data/processed/` corruption issue caused by multiple ingestion modes writing to the same targets concurrently.
 
+## Monitoring and Feedback
+
+The app now logs two local event types:
+
+- `answer_generated`
+- `feedback_submitted`
+
+These events are written to ignored local JSONL logs under `data/processed/` and are surfaced through the monitoring dashboard.
+
 ## Screenshots
 
-Placeholder for Attempt 1 screenshots:
+Placeholder for submission screenshots:
 
 - landing page
 - Ask SupportLens page
+- monitoring dashboard
 - evaluation report page

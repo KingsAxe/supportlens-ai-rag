@@ -10,7 +10,7 @@ import streamlit as st
 
 from src.ingestion.io import resolve_repo_path
 
-st.set_page_config(page_title="Evaluation Report", page_icon="??", layout="wide")
+st.set_page_config(page_title="Evaluation Report", page_icon="ER", layout="wide")
 st.title("Evaluation Report")
 st.caption("Current local metrics for retrieval and dry-run answer quality.")
 
@@ -66,6 +66,7 @@ st.markdown(
 
 - The hard-set retrieval benchmark is still the main controlled comparison set.
 - The app defaults to deterministic dry-run generation for reproducible reviewer testing.
+- Monitoring now captures answer-generation events, user ratings, thumbs feedback, optional comments, and retrieval metadata in ignored local logs.
 - Full live LLM evaluation is still pending provider quota access for the configured Qwen setup.
 """
 )

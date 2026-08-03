@@ -51,7 +51,8 @@ The current local knowledge base is file-backed under `data/processed/` and incl
 - retrieval chunks;
 - vector cache artifacts when vector retrieval is used;
 - evaluation metric reports;
-- RAG run logs.
+- RAG run logs;
+- monitoring events.
 
 This is a local development baseline, not the final storage design.
 
@@ -80,15 +81,15 @@ The current grounded-generation layer can:
 The current app layer provides:
 
 - a landing page;
-- an Ask SupportLens page for question answering;
-- a lightweight evaluation report page;
-- a monitoring placeholder page for the next phase.
+- an Ask SupportLens page for question answering and feedback capture;
+- a monitoring dashboard page for local usage and feedback analytics;
+- a lightweight evaluation report page.
 
 The app does not auto-run all ingestion modes on rerun. Knowledge-base preparation is explicit to avoid concurrent writes to shared processed targets.
 
 ### Feedback and monitoring
 
-Feedback logging and monitoring dashboards are still later phases.
+The monitoring layer now logs local answer-generation and feedback-submission events and summarizes them in the Streamlit dashboard through file-backed analytics helpers.
 
 ### Packaging and deployment
 

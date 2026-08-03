@@ -24,12 +24,12 @@ Implemented in the current local stack:
 - Supports deterministic dry-run/mock answer generation without API keys.
 - Supports real OpenAI-compatible LLM mode when environment variables and dependencies are available.
 - Runs dry-run answer-quality evaluation and writes ignored local evaluation summaries.
-- Provides a lightweight Streamlit reviewer interface with an Ask page and an evaluation summary page.
+- Provides a Streamlit reviewer interface with Ask, Monitoring Dashboard, and Evaluation Report pages.
+- Captures local answer-generation and feedback monitoring events for the rubric-required monitoring layer.
 
 Planned later phases:
 
 - Live LLM answer-quality comparison after provider quota access is restored.
-- Feedback capture and monitoring.
 - Docker deployment and GCP deployment.
 
 ## Architecture Overview
@@ -85,7 +85,7 @@ Constraints:
 
 See [docs/data_strategy.md](docs/data_strategy.md) and [docs/public_dataset_pass.md](docs/public_dataset_pass.md) for details.
 
-## Retrieval, Grounding, and Interface
+## Retrieval, Grounding, Interface, and Monitoring
 
 Implemented commands:
 
@@ -100,18 +100,18 @@ streamlit run app/streamlit_app.py
 Current retrieval and answer summary:
 
 - `hybrid_rerank` is the selected retrieval method for grounded generation.
-- `combined-sample` is the recommended ingestion mode for local experimentation and Attempt 1 review.
+- `combined-sample` is the recommended ingestion mode for local experimentation and review.
 - The harder synthetic set remains the main retrieval comparison benchmark.
 - Public Bitext cases add broader customer phrasing without changing the expected IDs in the controlled evaluation files.
 - The Streamlit app defaults to dry-run mode and requires explicit knowledge-base preparation for the selected dataset mode.
-- Phase 5A validates answer structure and grounding proxies in dry-run mode rather than claiming final live LLM quality.
+- Monitoring now captures local answer-generation events, ratings, thumbs feedback, optional comments, and retrieval metadata.
 
 Validation note:
 
 - The Phase 3, Phase 4, and Phase 5A dry-run validation runs used the local offline vector fallback because `sentence-transformers` was not installed in the current validation environment. The vector module is configured to use `sentence-transformers/all-MiniLM-L6-v2` when the dependency and model are available.
 - Phase 4 dry-run answer generation was validated successfully. The OpenAI-compatible Qwen models endpoint was reachable when local proxy variables were disabled, but the live chat smoke test was blocked by a provider-side 403 quota or billing response. Real LLM mode is implemented through environment-based configuration, while dry-run mode remains available for reproducible reviewer testing without an API key.
 
-See [docs/phase3_retrieval_comparison.md](docs/phase3_retrieval_comparison.md), [docs/phase4_grounded_generation.md](docs/phase4_grounded_generation.md), [docs/phase5_answer_evaluation.md](docs/phase5_answer_evaluation.md), [docs/public_dataset_pass.md](docs/public_dataset_pass.md), and [docs/streamlit_interface.md](docs/streamlit_interface.md).
+See [docs/phase3_retrieval_comparison.md](docs/phase3_retrieval_comparison.md), [docs/phase4_grounded_generation.md](docs/phase4_grounded_generation.md), [docs/phase5_answer_evaluation.md](docs/phase5_answer_evaluation.md), [docs/public_dataset_pass.md](docs/public_dataset_pass.md), [docs/streamlit_interface.md](docs/streamlit_interface.md), and [docs/monitoring_dashboard.md](docs/monitoring_dashboard.md).
 
 ## Evaluation
 
@@ -127,9 +127,14 @@ See [docs/evaluation_plan.md](docs/evaluation_plan.md).
 
 ## Monitoring
 
-Monitoring is still a later phase. The current Streamlit monitoring page is an explicit placeholder for the next phase.
+Monitoring now includes:
 
-See [docs/monitoring_plan.md](docs/monitoring_plan.md).
+- local JSONL event logging under ignored `data/processed/` outputs;
+- feedback capture from the Ask SupportLens page;
+- a Streamlit monitoring dashboard with usage, feedback, source mix, and latency charts;
+- a synthetic demo monitoring-event seed option for reviewer convenience.
+
+See [docs/monitoring_dashboard.md](docs/monitoring_dashboard.md) and [docs/monitoring_plan.md](docs/monitoring_plan.md).
 
 ## Docker and Reproducibility
 
@@ -137,7 +142,7 @@ This repository still uses placeholder Docker files in the current phase.
 
 - `pyproject.toml` declares local retrieval, LLM-client, and Streamlit dependencies.
 - `.env.example` contains placeholders only and no real secrets.
-- `data/processed/` is used for ignored local artifacts such as chunk outputs, metrics, vector caches, answer evaluation outputs, public dataset transforms, and RAG run logs.
+- `data/processed/` is used for ignored local artifacts such as chunk outputs, metrics, vector caches, answer evaluation outputs, public dataset transforms, RAG run logs, and monitoring events.
 
 ## GCP Deployment
 
@@ -159,9 +164,9 @@ Current progress against the final project rubric:
 - [x] Retrieval evaluation baseline
 - [x] Dry-run answer evaluation framework
 - [x] Application interface baseline
+- [x] User feedback collection baseline
+- [x] Monitoring implementation baseline
 - [ ] Live LLM answer evaluation
-- [ ] User feedback collection
-- [ ] Monitoring implementation
 - [ ] Docker/containerization implementation
 - [ ] Reproducible deployment setup
 - [ ] Optional cloud deployment implementation
@@ -177,10 +182,11 @@ Current status as of August 3, 2026:
 - Phase 4 grounded answer-generation baseline is complete with successful dry-run validation.
 - Phase 5A answer-quality evaluation is implemented and validated in dry-run mode.
 - The public dataset pass adds a committed Bitext-derived support-case sample plus optional adapter support for larger local transforms.
-- The submission-focused Streamlit interface is implemented for Attempt 1 review.
+- The Streamlit reviewer interface is implemented for local review.
+- Feedback capture and monitoring dashboard are now implemented.
 - Live LLM evaluation is still blocked by the provider-side quota or billing response observed in Phase 4.
-- Monitoring, Docker, and GCP deployment are not implemented yet.
+- Docker and GCP deployment are not implemented yet.
 
 ## Next Step
 
-Recommended next phase: implement the monitoring and feedback dashboard layer on top of the current Streamlit app.
+Recommended next phase: Docker and final submission packaging.

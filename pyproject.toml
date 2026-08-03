@@ -11,6 +11,7 @@ dependencies = [
   "openai>=1.40,<2",
   "python-dotenv>=1.0,<2",
   "streamlit>=1.38,<2",
+  "pandas>=2.2,<3",
 ]
 
 [build-system]
