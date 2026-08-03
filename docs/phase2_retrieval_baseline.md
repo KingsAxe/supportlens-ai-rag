@@ -21,6 +21,10 @@ Not implemented in this phase:
 - LLM answer generation;
 - UI, monitoring, Docker, or GCP deployment.
 
+Later note:
+
+- the later public dataset pass adds optional Bitext-derived support cases through `--public-sample` and `--combined-sample`, but the original Phase 2 metric definitions remain tied to the synthetic benchmark documented here.
+
 ## Ingestion Pipeline Summary
 
 Command:

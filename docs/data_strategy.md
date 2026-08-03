@@ -2,39 +2,51 @@
 
 ## Goals
 
-The data plan is designed to be public, reproducible, reviewable, and safe to share in a public repository. Phase 1 uses a synthetic but realistic support-intelligence dataset so the project can demonstrate retrieval, grounding, evaluation, and monitoring flows without exposing private data.
+The data plan is designed to be public, reproducible, reviewable, and safe to share in a public repository. SupportLens uses a mixed dataset strategy so the project can demonstrate retrieval, grounding, evaluation, and monitoring flows without exposing private data.
 
 ## Selected Dataset Design
 
-The initial dataset design uses three complementary document layers:
+The project now uses three complementary document layers and two case-data sources:
 
-1. Customer support cases or utterances stored as structured JSONL records.
-2. Support policy documents stored as policy-centric JSONL records.
-3. Resolution playbooks stored as internal guidance JSONL records.
+1. Synthetic support cases for controlled benchmark design.
+2. Public Bitext-derived support cases for broader real-world phrasing coverage.
+3. Synthetic support policy documents.
+4. Synthetic internal resolution playbooks.
 
-Committed sample files in this phase:
+Committed data files in the repository:
 
 - `data/sample/support_cases.jsonl`
+- `data/sample/public_support_cases_bitext.jsonl`
 - `data/sample/support_policies.jsonl`
 - `data/sample/resolution_playbooks.jsonl`
 - `data/sample/evaluation_questions.jsonl`
+- `data/sample/evaluation_questions_hard.jsonl`
 - `data/sample/source_manifest.md`
+
+Public dataset source used for the public sample:
+
+- Hugging Face dataset: `bitext/Bitext-customer-support-llm-chatbot-training-dataset`
+- License: `cdla-sharing-1.0`
+- Source fields: `flags`, `instruction`, `category`, `intent`, `response`
+
+The repository commits only a reviewer-friendly transformed sample, not the full 26K-row raw dataset.
 
 ## Why This Data Is Suitable for a Customer-Support RAG Agent
 
-This design matches the core retrieval problem faced by support teams:
+This mix matches the core retrieval problem faced by support teams:
 
-- support cases provide prior examples of customer language, issue framing, and successful resolutions;
+- synthetic support cases provide tightly controlled examples for benchmark design and expected-ID evaluation;
+- public Bitext support cases provide broader customer wording, paraphrases, and distractor material;
 - policies provide rule-based constraints that determine what an agent can promise or approve;
 - playbooks provide action-oriented internal guidance for troubleshooting, de-escalation, and escalation.
 
-Using all three layers allows the future RAG system to answer both factual and procedural questions while grounding responses in explicit sources.
+Using all of these sources lets the project evaluate both targeted retrieval quality and the impact of noisier real-world support language.
 
 ## Data Schemas
 
 ### Support cases schema
 
-Each support case record is designed to include:
+Each support case record includes:
 
 - `case_id`
 - `customer_message`
@@ -46,17 +58,32 @@ Each support case record is designed to include:
 - `resolution_summary`
 - `agent_response`
 - `created_at`
+- `source_dataset` optional
+- `source_license` optional
+- `source_record_id` optional
 
-Why this schema helps:
+How this schema helps:
 
-- `customer_message` supports semantic and lexical matching;
+- `customer_message` supports lexical and semantic retrieval;
 - `category`, `intent`, and `product_area` support filtering and monitoring;
 - `resolution_summary` and `agent_response` support answer drafting and evaluation;
-- `priority` and `status` support operational analysis.
+- provenance fields distinguish synthetic versus public records.
+
+Bitext mapping used by the public sample:
+
+- `instruction` -> `customer_message`
+- `category` -> `category`
+- `intent` -> `intent`
+- `response` -> `agent_response`
+- shortened `response` -> `resolution_summary`
+- synthetic metadata -> `priority`, `status`, `created_at`
+- `source_dataset` -> `bitext/Bitext-customer-support-llm-chatbot-training-dataset`
+- `source_license` -> `cdla-sharing-1.0`
+- row index provenance -> `source_record_id`
 
 ### Support policies schema
 
-Each policy record is designed to include:
+Each policy record includes:
 
 - `policy_id`
 - `title`
@@ -65,7 +92,7 @@ Each policy record is designed to include:
 - `effective_date`
 - `source_type`
 
-Why this schema helps:
+How this schema helps:
 
 - policy text is a primary grounding source for customer-facing constraints;
 - categories support targeted retrieval and analytics;
@@ -73,7 +100,7 @@ Why this schema helps:
 
 ### Resolution playbooks schema
 
-Each playbook record is designed to include:
+Each playbook record includes:
 
 - `playbook_id`
 - `title`
@@ -83,7 +110,7 @@ Each playbook record is designed to include:
 - `escalation_rules`
 - `source_type`
 
-Why this schema helps:
+How this schema helps:
 
 - trigger conditions support matching internal actions to support scenarios;
 - recommended steps provide structured guidance for answer generation;
@@ -91,71 +118,73 @@ Why this schema helps:
 
 ## Public-Data Extension Plan
 
-The committed sample data is synthetic and intentionally small. Future extension can add public support-style data sources while keeping the same schemas or mapping into them.
+The selected public-data extension for this submission is Bitext. The project includes two reproducible options:
 
-Planned extension path:
+1. committed public sample file for reviewers;
+2. optional adapter command to re-download and transform a larger local Bitext subset into ignored `data/processed/` output.
 
-1. identify a public support-conversation or helpdesk-style dataset with reproducible access;
-2. normalize public records into the support-case schema;
-3. preserve provenance metadata marking each record as public or synthetic;
-4. augment the sample policies and playbooks with additional authored support knowledge documents.
+Current public-data command:
 
-Selection criteria for public data:
+```bash
+python -m src.ingestion.public_datasets --source bitext --limit 300
+```
 
-- open availability;
-- reproducible acquisition path;
-- suitability for support-style retrieval;
-- no private or restricted content.
+Future extension can add:
+
+- larger local Bitext slices for deeper retrieval stress tests;
+- additional open support-style datasets mapped into the same schema;
+- richer public-data provenance and category normalization rules.
 
 ## Synthetic-Data Governance Note
 
-All Phase 1 sample records are synthetic. They are designed to resemble realistic support operations without referencing any real customer, employee, company account, or internal document.
+The synthetic benchmark cases, policies, and playbooks are authored or generated for this repository. The public Bitext cases are from a public dataset and remain placeholder-style synthetic support language rather than private customer data.
 
-Governance rules for synthetic data in this repository:
+Governance rules for this repository:
 
-- no real names linked to personal details;
-- no real email addresses, phone numbers, account numbers, or addresses;
+- no private support tickets;
+- no real customer PII intentionally included;
 - no private company information;
-- no DataTalksClub FAQ data.
+- no DataTalksClub FAQ data;
+- no committed secrets.
 
 ## How the Dataset Supports Retrieval Evaluation
 
-The support cases, policies, and playbooks are intentionally cross-linked by category and issue type. This supports retrieval evaluation because a single question may have:
+The dataset supports two complementary evaluation goals:
 
-- relevant historical cases for precedent;
-- relevant policies for constraints;
-- relevant playbooks for internal next steps.
+- controlled measurement through the synthetic evaluation question files;
+- tougher retrieval conditions through public Bitext distractor cases in combined mode.
 
-The evaluation seed set in `data/sample/evaluation_questions.jsonl` maps each question to expected relevant document IDs for Hit Rate and MRR benchmarking across keyword, vector, hybrid, and reranked retrieval.
+The synthetic evaluation sets in `data/sample/evaluation_questions.jsonl` and `data/sample/evaluation_questions_hard.jsonl` still define the expected relevant IDs for Hit Rate and MRR. The Bitext public sample does not change those expected IDs; it adds broader customer language and more non-answer distractors.
 
 ## How the Dataset Supports LLM Evaluation
 
-The dataset supports future answer evaluation by providing distinct evidence types:
+The data supports future answer evaluation by combining:
 
-- support cases help assess example-based answer relevance;
-- policies help assess groundedness and citation correctness;
-- playbooks help assess procedural completeness and escalation quality.
+- public support phrasing from Bitext;
+- synthetic policy constraints;
+- synthetic playbook guidance;
+- controlled expected IDs from the synthetic benchmark.
 
-This makes it possible to compare prompts based on whether the generated answer:
+This makes it possible to compare prompts based on whether a generated answer:
 
-- addresses the user’s need;
-- stays within policy limits;
-- references the correct supporting documents;
-- includes appropriate escalation guidance when necessary.
+- addresses the user request;
+- remains grounded in retrieved evidence;
+- respects policy constraints;
+- cites the correct support sources.
 
 ## How the Dataset Supports Monitoring
 
 The structured fields support future monitoring and dashboarding:
 
-- `category`, `intent`, and `product_area` support top-topic charts;
+- `category`, `intent`, and `product_area` support topic charts;
 - `priority` supports risk-oriented analysis;
-- document provenance supports synthetic versus public-data tracking;
-- retrieval matches against cases, policies, and playbooks can be logged to understand source usage patterns.
+- provenance fields support synthetic-versus-public tracking;
+- source-type usage can show whether answers lean more on cases, policies, or playbooks.
 
 ## Data Governance Constraints
 
 - No private support data.
-- No customer PII intentionally included.
+- No committed raw Bitext full dataset.
 - No repository secrets.
 - No DataTalksClub FAQ data.
 
@@ -167,7 +196,7 @@ The structured fields support future monitoring and dashboarding:
 
 ## Planned Metadata Strategy
 
-Each document or chunk is expected to carry metadata such as:
+Every stored document or chunk is expected to carry metadata such as:
 
 - source type;
 - source identifier;
@@ -175,4 +204,5 @@ Each document or chunk is expected to carry metadata such as:
 - product area when relevant;
 - timestamp or effective date;
 - chunk identifier;
-- synthetic or public provenance marker.
+- synthetic or public provenance marker;
+- source dataset and license where relevant.

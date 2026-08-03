@@ -69,6 +69,12 @@ The grounded answer prompt requires the model to:
 - avoid inventing policy details;
 - keep a professional support tone.
 
+Phase 5A also prepares named prompt variants for future live comparison:
+
+- `baseline_grounded`
+- `concise_support`
+- `policy_first`
+
 ## LLM Configuration
 
 The answer layer reads these environment variables when present:
@@ -97,8 +103,8 @@ Dry-run mode is the validated baseline in the current environment. It:
 ## CLI Examples
 
 ```bash
-python -m src.rag.answer --question "A customer says they were charged twice after upgrading. What similar cases and policies apply?" --top-k 5 --dry-run
-python -m src.rag.answer --question "A customer wants to cancel after a failed payment and asks for a refund. How should support respond?" --top-k 5 --dry-run
+python -m src.rag.answer --question "A customer says they were charged twice after upgrading. What similar cases and policies apply?" --top-k 5 --dry-run --prompt-version baseline_grounded
+python -m src.rag.answer --question "A customer wants to cancel after a failed payment and asks for a refund. How should support respond?" --top-k 5 --dry-run --prompt-version baseline_grounded
 ```
 
 Real mode is supported in code through environment-based configuration. Phase 4 dry-run answer generation was validated successfully. The OpenAI-compatible Qwen models endpoint was reachable when local proxy variables were disabled, but the live chat smoke test was blocked by a provider-side 403 quota/billing response. Real LLM mode is implemented through environment-based configuration, while dry-run mode remains available for reproducible reviewer testing without an API key.
@@ -114,7 +120,7 @@ Observed behavior:
 
 - both runs produced structured markdown answers;
 - both runs emitted citation IDs and evidence lists;
-- both runs logged local run metadata with provider `mock` and model `mock-supportlens`;
+- both runs logged local run metadata with provider `mock` and model derived from local config;
 - the retrieved evidence remains useful but still shows that free-form unseen questions can surface mixed-quality context, especially in dry-run mode.
 
 ## Limitations
@@ -128,6 +134,5 @@ Observed behavior:
 
 Recommended next phase:
 
-- add answer-quality evaluation over generated outputs;
-- measure groundedness and citation correctness more deeply;
-- compare prompt variants and dry-run versus live-generation behavior when a real LLM configuration is available.
+- add dry-run answer-quality aggregation, which is now implemented in Phase 5A;
+- then move to live LLM answer evaluation and prompt comparison once provider quota access is restored.

@@ -65,13 +65,28 @@ Phase 4 adds lightweight non-LLM answer evaluation hooks for later use:
 - evidence count;
 - helper overlap checks between retrieved and expected source IDs.
 
-These hooks are not full answer-quality scoring yet. They are intended to support the more complete answer evaluation work in Phase 5.
+Phase 5A expands this into a reusable dry-run answer-quality framework with:
+
+- section completeness checks;
+- source overlap rate;
+- citation validity rate;
+- grounding proxy score;
+- basic quality pass/fail signals.
+
+These checks are still non-LLM and intentionally transparent.
 
 ## Current Comparative Use
 
 The retrieval comparison report is written locally to `data/processed/retrieval_comparison_metrics.json` and is intentionally ignored by git.
 
-The grounded answer CLI also writes local run metadata to `data/processed/rag_runs.jsonl`, which is likewise ignored.
+The grounded answer CLI writes local run metadata to `data/processed/rag_runs.jsonl`, which is likewise ignored.
+
+The dry-run answer evaluation runner writes:
+
+- `data/processed/answer_evaluation_results.jsonl`
+- `data/processed/answer_evaluation_summary.json`
+
+These are also ignored by git.
 
 ## LLM Evaluation Scope
 
@@ -84,10 +99,15 @@ Planned richer answer-level evaluation dimensions for later phases:
 
 ## LLM Evaluation Design
 
-The later answer evaluation workflow is planned to:
+Current status:
+
+- Phase 5A validates the evaluation framework and dry-run answer structure.
+- It does not yet provide final live LLM quality scores because the configured Qwen account returned a provider-side quota/billing error during Phase 4 validation.
+
+The later live answer evaluation workflow is planned to:
 
 - reuse retrieval benchmarks from the current question sets;
-- compare prompts under fixed retrieval inputs;
+- compare prompt variants such as `baseline_grounded`, `concise_support`, and `policy_first`;
 - inspect whether claims are supported by retrieved evidence;
 - verify whether citations match the correct source records.
 
@@ -97,6 +117,6 @@ Planned artifacts include:
 
 - retrieval comparison tables;
 - benchmark summaries by method;
-- answer citation validation summaries;
-- future prompt comparison notes;
+- dry-run answer citation and structure summaries;
+- future live prompt comparison notes;
 - evaluation report content for the application layer.

@@ -14,6 +14,10 @@ Phase 3 expands retrieval beyond the Phase 2 keyword baseline by adding:
 
 The original evaluation set is still useful for regression checks, but it is small and tightly aligned with the initial synthetic documents. That made it possible for multiple methods to reach perfect Hit Rate and MRR, which is acceptable as a controlled baseline but not strong evidence of retrieval robustness.
 
+Later note:
+
+- the public dataset pass adds Bitext-derived public support cases as broader-language distractors in combined ingestion mode, while the hard synthetic evaluation set remains the controlled comparison target for the metrics in this document.
+
 ## Harder Evaluation Set Design
 
 `data/sample/evaluation_questions_hard.jsonl` adds 12 harder questions with:
@@ -96,6 +100,7 @@ Why:
 - The current vector path may use the offline sklearn fallback if `sentence-transformers` is not installed locally.
 - The reranker is heuristic rather than model-based.
 - The evaluation still uses source ID matching rather than deeper relevance grading.
+- Public Bitext data adds useful distractors later, but the headline metrics here still come from the synthetic evaluation files.
 
 ## Next Steps
 

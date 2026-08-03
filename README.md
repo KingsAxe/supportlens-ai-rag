@@ -12,20 +12,23 @@ SupportLens AI is planned as a customer support intelligence system that helps s
 
 Implemented in the current local stack:
 
-- Validates the committed synthetic sample dataset.
+- Validates the committed synthetic benchmark data and the committed public Bitext-derived sample.
+- Supports synthetic-only, public-only, and combined-sample ingestion modes.
+- Includes an optional public dataset adapter for Bitext that writes ignored processed JSONL outputs.
 - Normalizes support cases, policies, and playbooks into a shared document format.
 - Prepares deterministic retrieval chunks.
 - Runs keyword, vector, hybrid, and hybrid-plus-rerank retrieval evaluation.
 - Uses `hybrid_rerank` as the current retrieval method for grounded answer generation.
 - Packages retrieval results into citation-ready evidence.
-- Builds a grounded support-assistant prompt.
+- Builds grounded support-assistant prompts with named prompt variants.
 - Supports deterministic dry-run/mock answer generation without API keys.
 - Supports real OpenAI-compatible LLM mode when environment variables and dependencies are available.
+- Runs dry-run answer-quality evaluation and writes ignored local evaluation summaries.
 - Writes ignored local run metadata for later answer evaluation and monitoring work.
 
 Planned later phases:
 
-- Richer answer evaluation.
+- Live LLM answer-quality comparison after provider quota access is restored.
 - Feedback capture and monitoring.
 - Streamlit UI.
 - Docker deployment and GCP deployment.
@@ -51,20 +54,28 @@ See [docs/architecture.md](docs/architecture.md) for the retrieval-oriented arch
 
 ## Dataset Strategy
 
-The project uses a reproducible support-intelligence dataset design with three data layers:
+The project now uses a reproducible support-intelligence dataset design with three operational layers and two case-data sources:
 
-- Synthetic customer support cases designed for retrieval, evaluation, and answer drafting.
+- Synthetic customer support cases designed for controlled retrieval, evaluation, and answer drafting.
+- Public Bitext-derived customer support cases that broaden phrasing coverage and retrieval distractors.
 - Synthetic support policy documents that simulate customer-facing rules and constraints.
 - Synthetic internal resolution playbooks that simulate agent guidance and escalation paths.
 
-Committed sample benchmark files:
+Committed sample files:
 
 - `data/sample/support_cases.jsonl`
+- `data/sample/public_support_cases_bitext.jsonl`
 - `data/sample/support_policies.jsonl`
 - `data/sample/resolution_playbooks.jsonl`
 - `data/sample/evaluation_questions.jsonl`
 - `data/sample/evaluation_questions_hard.jsonl`
 - `data/sample/source_manifest.md`
+
+Public dataset source:
+
+- Hugging Face: `bitext/Bitext-customer-support-llm-chatbot-training-dataset`
+- License: `cdla-sharing-1.0`
+- Committed asset: transformed reviewer-friendly sample only, not the full raw dataset.
 
 Constraints:
 
@@ -72,7 +83,7 @@ Constraints:
 - No secrets in the repository.
 - No DataTalksClub FAQ data.
 
-See [docs/data_strategy.md](docs/data_strategy.md) for the detailed plan.
+See [docs/data_strategy.md](docs/data_strategy.md) and [docs/public_dataset_pass.md](docs/public_dataset_pass.md) for details.
 
 ## Retrieval and Grounded Generation
 
@@ -80,23 +91,29 @@ Implemented commands:
 
 ```bash
 python -m src.ingestion.pipeline --sample
+python -m src.ingestion.pipeline --public-sample
+python -m src.ingestion.pipeline --combined-sample
+python -m src.ingestion.public_datasets --source bitext --limit 300
 python -m src.retrieval.evaluate --sample --top-k 5 --method hybrid_rerank --eval-file data/sample/evaluation_questions_hard.jsonl
 python -m src.rag.answer --question "A customer says they were charged twice after upgrading. What similar cases and policies apply?" --top-k 5 --dry-run
+python -m src.evaluation.run_answer_evaluation --eval-file data/sample/evaluation_questions_hard.jsonl --top-k 5 --dry-run
 ```
 
-Current retrieval summary:
+Current retrieval and answer summary:
 
 - `hybrid_rerank` is the selected retrieval method for grounded generation.
+- `--combined-sample` is the recommended ingestion mode for local experimentation because it keeps the synthetic benchmark documents while adding public Bitext distractors.
 - The original synthetic set remains a controlled easy baseline.
-- The harder set is the more meaningful retrieval comparison benchmark.
-- The current answer layer is grounded by retrieved evidence and citation IDs, but it is still an early local baseline.
+- The harder synthetic set remains the main retrieval comparison benchmark.
+- Public Bitext cases add broader customer phrasing without changing the expected IDs in the controlled evaluation files.
+- Phase 5A validates answer structure and grounding proxies in dry-run mode rather than claiming final live LLM quality.
 
 Validation note:
 
-- The Phase 3 and Phase 4 validation runs used the local offline vector fallback because `sentence-transformers` was not installed in the current validation environment. The vector module is configured to use `sentence-transformers/all-MiniLM-L6-v2` when the dependency and model are available.
+- The Phase 3, Phase 4, and Phase 5A dry-run validation runs used the local offline vector fallback because `sentence-transformers` was not installed in the current validation environment. The vector module is configured to use `sentence-transformers/all-MiniLM-L6-v2` when the dependency and model are available.
 - Phase 4 dry-run answer generation was validated successfully. The OpenAI-compatible Qwen models endpoint was reachable when local proxy variables were disabled, but the live chat smoke test was blocked by a provider-side 403 quota/billing response. Real LLM mode is implemented through environment-based configuration, while dry-run mode remains available for reproducible reviewer testing without an API key.
 
-See [docs/phase3_retrieval_comparison.md](docs/phase3_retrieval_comparison.md) and [docs/phase4_grounded_generation.md](docs/phase4_grounded_generation.md).
+See [docs/phase3_retrieval_comparison.md](docs/phase3_retrieval_comparison.md), [docs/phase4_grounded_generation.md](docs/phase4_grounded_generation.md), [docs/phase5_answer_evaluation.md](docs/phase5_answer_evaluation.md), and [docs/public_dataset_pass.md](docs/public_dataset_pass.md).
 
 ## Planned Evaluation
 
@@ -104,6 +121,7 @@ Evaluation currently covers:
 
 - retrieval comparison metrics;
 - answer-shape and citation validation hooks;
+- dry-run answer-quality summary metrics;
 - local run metadata capture for later answer evaluation.
 
 See [docs/evaluation_plan.md](docs/evaluation_plan.md).
@@ -116,9 +134,9 @@ Monitoring is still a later phase. See [docs/monitoring_plan.md](docs/monitoring
 
 This repository still uses placeholder Docker files in the current phase.
 
-- `pyproject.toml` now declares local retrieval and LLM-client dependencies.
+- `pyproject.toml` declares local retrieval and LLM-client dependencies.
 - `.env.example` contains placeholders only and no real secrets.
-- `data/processed/` is used for ignored local artifacts such as chunk outputs, metrics, vector caches, and RAG run logs.
+- `data/processed/` is used for ignored local artifacts such as chunk outputs, metrics, vector caches, answer evaluation outputs, public dataset transforms, and RAG run logs.
 
 ## GCP Deployment
 
@@ -138,7 +156,8 @@ Current progress against the final project rubric:
 - [x] Retrieval baseline and comparison
 - [x] Grounded answer-generation baseline
 - [x] Retrieval evaluation baseline
-- [x] LLM evaluation hook layer
+- [x] Dry-run answer evaluation framework
+- [ ] Live LLM answer evaluation
 - [ ] Application interface
 - [ ] User feedback collection
 - [ ] Monitoring implementation
@@ -154,10 +173,12 @@ Current status as of August 3, 2026:
 - Phase 1 sample dataset strategy is complete.
 - Phase 2 ingestion and keyword retrieval baseline is complete.
 - Phase 3 retrieval comparison is complete.
-- Phase 4 grounded answer-generation baseline is implemented locally with successful dry-run validation.
-- Real LLM mode is implemented, the models endpoint was reachable with proxy variables disabled, but live chat validation is currently blocked by a provider-side quota/billing response.
+- Phase 4 grounded answer-generation baseline is complete with successful dry-run validation.
+- Phase 5A answer-quality evaluation is implemented and validated in dry-run mode.
+- The public dataset pass now adds a committed Bitext-derived support-case sample plus optional adapter support for larger local transforms.
+- Live LLM evaluation is still blocked by the provider-side quota/billing response observed in Phase 4.
 - UI, monitoring, Docker, and GCP deployment are not implemented yet.
 
 ## Next Step
 
-Recommended next phase: Phase 5, answer-quality evaluation and groundedness analysis.
+Recommended next phase: finish the submission-oriented Phase 5A/5B evaluation documentation pass, then move to the lightweight Streamlit application layer.

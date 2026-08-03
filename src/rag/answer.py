@@ -13,7 +13,7 @@ from src.rag.citations import build_citations
 from src.rag.config import load_config
 from src.rag.evaluation_hooks import check_answer_citations, summarize_answer_shape
 from src.rag.llm_client import generate_answer
-from src.rag.prompts import build_answer_prompt
+from src.rag.prompts import PROMPT_VARIANTS, build_answer_prompt
 from src.retrieval.hybrid import reciprocal_rank_fusion
 from src.retrieval.keyword import KeywordRetriever, tokenize
 from src.retrieval.rerank import rerank_candidates
@@ -80,11 +80,17 @@ def retrieve_hybrid_rerank(question: str, top_k: int, embedding_model: str = DEF
     return _select_citation_subset(question, reranked, top_k=top_k)
 
 
-def run_answer(question: str, top_k: int, dry_run: bool, embedding_model: str = DEFAULT_MODEL_NAME) -> dict[str, Any]:
+def run_answer(
+    question: str,
+    top_k: int,
+    dry_run: bool,
+    embedding_model: str = DEFAULT_MODEL_NAME,
+    prompt_version: str = "baseline_grounded",
+) -> dict[str, Any]:
     config = load_config()
     retrieval_results = retrieve_hybrid_rerank(question=question, top_k=top_k, embedding_model=embedding_model)
     citations = build_citations(retrieval_results)
-    prompt = build_answer_prompt(question=question, citations=citations)
+    prompt = build_answer_prompt(question=question, citations=citations, prompt_version=prompt_version)
     llm_output = generate_answer(
         config=config,
         question=question,
@@ -108,6 +114,7 @@ def run_answer(question: str, top_k: int, dry_run: bool, embedding_model: str = 
         "input_tokens": llm_output["input_tokens"],
         "output_tokens": llm_output["output_tokens"],
         "dry_run": llm_output["dry_run"],
+        "prompt_version": prompt_version,
     }
     append_jsonl(RAG_RUNS_PATH, run_metadata)
 
@@ -117,6 +124,7 @@ def run_answer(question: str, top_k: int, dry_run: bool, embedding_model: str = 
         "citations": citations,
         "retrieved_evidence": retrieval_results,
         "prompt": prompt,
+        "prompt_version": prompt_version,
         "answer_text": llm_output["answer_text"],
         "provider": llm_output["provider"],
         "model": llm_output["model"],
@@ -141,6 +149,12 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_MODEL_NAME,
         help="Embedding model name for vector retrieval when available",
     )
+    parser.add_argument(
+        "--prompt-version",
+        default="baseline_grounded",
+        choices=sorted(PROMPT_VARIANTS),
+        help="Named prompt variant for answer generation",
+    )
     return parser.parse_args()
 
 
@@ -151,6 +165,7 @@ def main() -> None:
         top_k=args.top_k,
         dry_run=args.dry_run,
         embedding_model=args.embedding_model,
+        prompt_version=args.prompt_version,
     )
     print(result["answer_text"])
     print("\nCitations:")
@@ -160,6 +175,7 @@ def main() -> None:
     print(f"provider={result['provider']}")
     print(f"model={result['model']}")
     print(f"retrieval_method={result['retrieval_method']}")
+    print(f"prompt_version={result['prompt_version']}")
     print(f"latency_ms={result['latency_ms']}")
     print(f"dry_run={result['dry_run']}")
 
