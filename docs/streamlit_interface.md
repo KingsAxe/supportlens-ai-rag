@@ -16,6 +16,12 @@ Recommended preparation flow before using the Ask page:
 python -m src.ingestion.pipeline --combined-sample
 ```
 
+Docker Compose is also supported for reviewer startup:
+
+```bash
+docker compose up --build
+```
+
 ## Pages Implemented
 
 1. `streamlit_app.py`
@@ -95,5 +101,6 @@ Placeholder for submission screenshots:
 
 - landing page
 - Ask SupportLens page
+- evidence and citations table
 - monitoring dashboard
 - evaluation report page

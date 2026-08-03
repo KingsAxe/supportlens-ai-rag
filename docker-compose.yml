@@ -1,6 +1,15 @@
-# TODO: Add local development services in a later phase.
-# Planned scope:
-# - Application service
-# - Database and vector store if selected
-# - Mounted source for local development
-# - Environment variable wiring from a local, non-committed env file
+services:
+  supportlens-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: supportlens-ai-streamlit
+    ports:
+      - "8501:8501"
+    environment:
+      APP_ENV: development
+      LLM_PROVIDER: mock
+      LLM_MODEL: mock-supportlens
+      LLM_BASE_URL: ""
+      LLM_API_KEY: ""
+    restart: unless-stopped

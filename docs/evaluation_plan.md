@@ -102,7 +102,8 @@ Planned richer answer-level evaluation dimensions for later phases:
 Current status:
 
 - Phase 5A validates the evaluation framework and dry-run answer structure.
-- It does not yet provide final live LLM quality scores because the configured Qwen account returned a provider-side quota/billing error during Phase 4 validation.
+- It does not yet provide final live LLM quality scores because the configured Qwen account returned a provider-side quota or billing error during Phase 4 validation.
+- The final Attempt 1 submission therefore treats dry-run answer quality and retrieval metrics as the verified reproducible baseline.
 
 The later live answer evaluation workflow is planned to:
 

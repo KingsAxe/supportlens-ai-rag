@@ -114,3 +114,4 @@ Monitoring logs are intentionally excluded from git because:
 - There is no multi-user persistence or authentication.
 - The dashboard is intended for submission review, not production observability.
 - Real LLM usage remains optional and untested here because live provider quota access is still blocked.
+- Docker packaging keeps the same local file-backed monitoring behavior; it does not add a hosted monitoring service.

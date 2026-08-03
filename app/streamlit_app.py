@@ -6,7 +6,7 @@ import streamlit as st
 
 st.set_page_config(
     page_title="SupportLens AI",
-    page_icon="??",
+    page_icon="SL",
     layout="wide",
 )
 
@@ -33,7 +33,7 @@ with left:
 1. **Ask SupportLens**
 Generate a grounded support answer, inspect citations, and review retrieval metadata.
 2. **Monitoring Dashboard**
-Placeholder for the next phase.
+View local answer-generation and feedback analytics, including demo monitoring events.
 3. **Evaluation Report**
 Lightweight view of current retrieval and dry-run answer-quality metrics.
 """

@@ -1,96 +1,90 @@
 # SupportLens AI Architecture
 
-## Target Flow
+## Attempt 1 Flow
 
 ```text
-Data sources
+Synthetic SupportLens cases + Bitext-derived public support cases + synthetic policies/playbooks
 -> ingestion pipeline
--> cleaned/chunked documents
--> keyword index + vector index
+-> normalized documents
+-> deterministic chunks
+-> keyword retrieval + vector retrieval
 -> hybrid retrieval
--> reranking
--> grounded LLM answer with citations
--> Streamlit reviewer interface
+-> lightweight reranking
+-> grounded answer generation with citations
 -> feedback logging
 -> monitoring dashboard
--> Docker/GCP deployment
+-> Streamlit reviewer interface
+-> Docker Compose runtime
 ```
 
-## Current Retrieval-Oriented Components
+## Data Sources
 
-### Data sources
+Current committed sources include:
 
-Current committed sample sources include:
+- synthetic support cases for controlled evaluation
+- Bitext-derived public support cases for broader phrasing coverage
+- synthetic support policies
+- synthetic resolution playbooks
+- synthetic evaluation question sets
 
-- synthetic support cases;
-- Bitext-derived public support cases;
-- synthetic policy documents;
-- synthetic playbooks;
-- synthetic evaluation sets.
+The dataset design excludes private data, secrets, and DataTalksClub FAQ data.
 
-The design intentionally excludes private data and DataTalksClub FAQ data.
+## Ingestion and Knowledge Base
 
-### Ingestion pipeline
+The implemented ingestion layer:
 
-The implemented ingestion layer can:
+- reads committed JSONL sample files
+- validates required fields and duplicate IDs
+- normalizes cases, policies, and playbooks into one document format
+- creates deterministic chunk records
+- supports `sample`, `public-sample`, and `combined-sample` modes
+- writes runtime artifacts to ignored files under `data/processed/`
 
-- load sample JSONL files;
-- validate schemas and duplicate IDs;
-- normalize records into a shared document format;
-- create deterministic chunk records;
-- support `sample`, `public_sample`, and `combined_sample` modes;
-- persist ignored local processed artifacts for retrieval and evaluation.
+`combined-sample` is the default reviewer mode because it mixes the controlled synthetic benchmark with the broader Bitext-derived public sample.
 
-The Streamlit interface uses `combined-sample` as the default and recommended mode.
-
-### Knowledge base
-
-The current local knowledge base is file-backed under `data/processed/` and includes:
-
-- normalized documents;
-- retrieval chunks;
-- vector cache artifacts when vector retrieval is used;
-- evaluation metric reports;
-- RAG run logs;
-- monitoring events.
-
-This is a local development baseline, not the final storage design.
-
-### Retrieval stack
+## Retrieval Stack
 
 The current retrieval stack includes:
 
-- BM25-style keyword retrieval;
-- local vector retrieval with a default sentence-transformers model configuration and an offline sklearn fallback path;
-- hybrid retrieval via reciprocal rank fusion;
-- a lightweight local reranker using lexical overlap, metadata overlap, and source diversity heuristics.
+- BM25-style keyword retrieval
+- local vector retrieval using sentence-transformers when available, with an offline fallback path
+- hybrid retrieval through reciprocal rank fusion
+- lightweight reranking based on lexical overlap, metadata cues, and source diversity
 
-### Grounded answer generation
+The selected retrieval method for the app is `hybrid_rerank`.
 
-The current grounded-generation layer can:
+## Grounded Generation Layer
 
-- retrieve evidence with `hybrid_rerank`;
-- package citation-ready evidence as `[C1]`, `[C2]`, and so on;
-- build a grounded support prompt;
-- call an OpenAI-compatible LLM when configured;
-- fall back to deterministic mock generation when no live LLM configuration is available;
-- log run metadata without storing secrets.
+The grounded-generation layer:
 
-### Streamlit reviewer interface
+- retrieves top evidence with `hybrid_rerank`
+- packages citations as `[C1]`, `[C2]`, and so on
+- builds grounded support prompts with named prompt variants
+- supports deterministic dry-run generation by default
+- supports OpenAI-compatible live LLM mode when environment configuration is present
+- logs run metadata without storing secrets
 
-The current app layer provides:
+Live Qwen chat validation remains blocked by a provider-side quota or billing response, so dry-run remains the reproducible default.
 
-- a landing page;
-- an Ask SupportLens page for question answering and feedback capture;
-- a monitoring dashboard page for local usage and feedback analytics;
-- a lightweight evaluation report page.
+## App and Monitoring Layer
 
-The app does not auto-run all ingestion modes on rerun. Knowledge-base preparation is explicit to avoid concurrent writes to shared processed targets.
+The Streamlit app provides:
 
-### Feedback and monitoring
+- a landing page with reviewer instructions
+- an Ask SupportLens page for answer generation
+- citation and retrieval metadata display
+- feedback capture with rating, thumbs, and optional comments
+- a monitoring dashboard with local analytics and demo events
+- an evaluation report page with current retrieval and answer-quality metrics
 
-The monitoring layer now logs local answer-generation and feedback-submission events and summarizes them in the Streamlit dashboard through file-backed analytics helpers.
+The app does not auto-run multiple ingestion modes on rerun. Knowledge-base preparation is explicit so shared `data/processed/` targets are not overwritten by parallel modes.
 
-### Packaging and deployment
+## Packaging and Deployment
 
-The local target remains Docker Compose in a later phase. The future cloud target is GCP Cloud Run with externalized secrets and managed persistence.
+Attempt 1 packaging targets local reproducibility first:
+
+- local Python execution
+- Streamlit reviewer app
+- Docker Compose startup on `http://localhost:8501`
+
+Future deployment remains planned for GCP Cloud Run with externalized secrets and managed persistence.
